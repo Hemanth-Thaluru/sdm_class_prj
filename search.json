@@ -1,0 +1,156 @@
+[
+  {
+    "objectID": "core.html",
+    "href": "core.html",
+    "title": "Exploratory Data Analysis",
+    "section": "",
+    "text": "View Source Code | View Slides | Watch Video Walkthrough\nimport seaborn as sns\nfrom fastai.tabular.all import *\nset_seed(42)"
+  },
+  {
+    "objectID": "core.html#sex-categorical-feature",
+    "href": "core.html#sex-categorical-feature",
+    "title": "Exploratory Data Analysis",
+    "section": "Sex–> Categorical Feature",
+    "text": "Sex–&gt; Categorical Feature\n\ndata.groupby(['Sex','Survived'])['Survived'].count()\n\n\nf,ax=plt.subplots(1,2,figsize=(18,8))\ndata[['Sex','Survived']].groupby(['Sex']).mean().plot.bar(ax=ax[0])\nax[0].set_title('Survived vs Sex')\nsns.countplot(x='Sex',hue='Survived',data=data,ax=ax[1])\nax[1].set_title('Sex:Survived vs Dead')\nplt.show()\n\nThis looks interesting. The number of men on the ship is lot more than the number of women. Still the number of women saved is almost twice the number of males saved. The survival rates for a women on the ship is around 75% while that for men in around 18-19%.\nThis looks to be a very important feature for modeling. But is it the best?? Lets check other features."
+  },
+  {
+    "objectID": "core.html#pclass-ordinal-feature",
+    "href": "core.html#pclass-ordinal-feature",
+    "title": "Exploratory Data Analysis",
+    "section": "Pclass –> Ordinal Feature",
+    "text": "Pclass –&gt; Ordinal Feature\npclass: A proxy for socio-economic status (SES) 1st = Upper 2nd = Middle 3rd = Lower\n\npd.crosstab(data.Pclass,data.Survived,margins=True).style.background_gradient(cmap='summer_r')\n\n\nf,ax=plt.subplots(1,2,figsize=(18,8))\ndata['Pclass'].value_counts().plot.bar(color=['#CD7F32','#FFDF00','#D3D3D3'],ax=ax[0])\nax[0].set_title('Number Of Passengers By Pclass')\nax[0].set_ylabel('Count')\nsns.countplot(x='Pclass',hue='Survived',data=data,ax=ax[1])\nax[1].set_title('Pclass:Survived vs Dead')\nplt.show()\n\n\n\n\nPeople say Money Can’t Buy Everything. But we can clearly see that Passenegers Of Pclass 1 were given a very high priority while rescue. Even though the the number of Passengers in Pclass 3 were a lot higher, still the number of survival from them is very low, somewhere around 25%.\nFor Pclass 1 %survived is around 63% while for Pclass2 is around 48%. So money and status matters. Such a materialistic world.\nLets Dive in little bit more and check for other interesting observations. Lets check survival rate with Sex and Pclass Together."
+  },
+  {
+    "objectID": "core.html#age-continous-feature",
+    "href": "core.html#age-continous-feature",
+    "title": "Exploratory Data Analysis",
+    "section": "Age–> Continous Feature",
+    "text": "Age–&gt; Continous Feature\n\nprint('Oldest Passenger was of:',data['Age'].max(),'Years')\nprint('Youngest Passenger was of:',data['Age'].min(),'Years')\nprint('Average Age on the ship:',data['Age'].mean(),'Years')\n\nOldest Passenger was of: 80.0 Years\nYoungest Passenger was of: 0.42 Years\nAverage Age on the ship: 29.841941638608304 Years\n\n\n\nf,ax=plt.subplots(1,2,figsize=(18,8))\nsns.violinplot(x=\"Pclass\",y=\"Age\", hue=\"Survived\", data=data,split=True,ax=ax[0])\nax[0].set_title('Pclass and Age vs Survived')\nax[0].set_yticks(range(0,110,10))\nsns.violinplot(x=\"Sex\",y=\"Age\", hue=\"Survived\", data=data,split=True,ax=ax[1])\nax[1].set_title('Sex and Age vs Survived')\nax[1].set_yticks(range(0,110,10))\nplt.show()\n\n\nObservations:\n\n\nThe number of children increases with Pclass and the survival rate for passenegers below Age 10(i.e children) looks to be good irrespective of the Pclass.\n\n\nSurvival chances for Passenegers aged 20-50 from Pclass1 is high and is even better for Women.\n\n\nFor males, the survival chances decreases with an increase in age.\n\nAs we had seen earlier, the Age feature has 177 null values. To replace these NaN values, we can assign them the mean age of the dataset.\nBut the problem is, there were many people with many different ages. We just cant assign a 4 year kid with the mean age that is 29 years. Is there any way to find out what age-band does the passenger lie??\nBingo!!!!, we can check the Name feature. Looking upon the feature, we can see that the names have a salutation like Mr or Mrs. Thus we can assign the mean values of Mr and Mrs to the respective groups.\n‘’What’s In A Name??’’—&gt; Feature :p\n\ndata['Initial']=0\nfor i in data:\n    data['Initial']=data.Name.str.extract('([A-Za-z]+)\\.') #lets extract the Salutations\n\n\npd.crosstab(data.Initial,data.Sex).T.style.background_gradient(cmap='summer_r') #Checking the Initials with the Sex\n\n\ndata['Initial'].replace(['Mlle','Mme','Ms','Dr','Major','Lady',\n                         'Countess','Jonkheer','Col','Rev','Capt','Sir','Don'],\n                        ['Miss','Miss','Miss','Mr','Mr','Mrs','Mrs','Other',\n                         'Other','Other','Mr','Mr','Mr'],inplace=True)\n\n\ndata.groupby('Initial')['Age'].mean() #lets check the average age by Initials\n\n\nFilling Missing - Ages\n\n## Assigning the NaN Values with the Ceil values of the mean ages\ndata.loc[(data.Age.isnull())&(data.Initial=='Mr'),'Age']=33\ndata.loc[(data.Age.isnull())&(data.Initial=='Mrs'),'Age']=36\ndata.loc[(data.Age.isnull())&(data.Initial=='Master'),'Age']=5\ndata.loc[(data.Age.isnull())&(data.Initial=='Miss'),'Age']=22\ndata.loc[(data.Age.isnull())&(data.Initial=='Other'),'Age']=46\n\n\ndata.Age.isnull().any() #So no null values left finally\n\n\nf,ax=plt.subplots(1,2,figsize=(20,10))\ndata[data['Survived']==0].Age.plot.hist(ax=ax[0],bins=20,edgecolor='black',color='red')\nax[0].set_title('Survived= 0')\nx1=list(range(0,85,5))\nax[0].set_xticks(x1)\ndata[data['Survived']==1].Age.plot.hist(ax=ax[1],color='green',bins=20,edgecolor='black')\nax[1].set_title('Survived= 1')\nx2=list(range(0,85,5))\nax[1].set_xticks(x2)\nplt.show()\n\n\nObservations:\n\n\nThe Toddlers(age&lt;5) were saved in large numbers(The Women and Child First Policy).\n\n\nThe oldest Passenger was saved(80 years).\n\n\nMaximum number of deaths were in the age group of 30-40.\n\n\nsns.catplot(x='Pclass',y='Survived',col='Initial',data=data,kind='bar')\nplt.show()\n\nThe Women and Child first policy thus holds true irrespective of the class."
+  },
+  {
+    "objectID": "core.html#embarked-categorical-value",
+    "href": "core.html#embarked-categorical-value",
+    "title": "Exploratory Data Analysis",
+    "section": "Embarked–> Categorical Value",
+    "text": "Embarked–&gt; Categorical Value\n\npd.crosstab([data.Embarked,data.Pclass],\n            [data.Sex,data.Survived],\n            margins=True).style.background_gradient(cmap='summer_r')\n\n\nChances for Survival by Port Of Embarkation\n\n# sns.factorplot(x=data['Embarked'],y=data['Survived'])\nsns.catplot(x=\"Embarked\", y=\"Survived\", data=data,kind='bar')\nfig=plt.gcf()\nfig.set_size_inches(5,3)\nplt.show()\n\nThe chances for survival for Port C is highest around 0.55 while it is lowest for S.\n\nf,ax=plt.subplots(2,2,figsize=(20,15))\nsns.countplot(x=data['Embarked'],ax=ax[0,0])\nax[0,0].set_title('No. Of Passengers Boarded')\nsns.countplot(x=data['Embarked'],hue='Sex',data=data,ax=ax[0,1])\nax[0,1].set_title('Male-Female Split for Embarked')\nsns.countplot(x=data['Embarked'],hue='Survived',data=data,ax=ax[1,0])\nax[1,0].set_title('Embarked vs Survived')\nsns.countplot(x=data['Embarked'],hue='Pclass',data=data,ax=ax[1,1])\nax[1,1].set_title('Embarked vs Pclass')\nplt.subplots_adjust(wspace=0.2,hspace=0.5)\nplt.show()\n\n\n\n\n\nObservations:\n\n\nMaximum passenegers boarded from S. Majority of them being from Pclass3.\n\n\nThe Passengers from C look to be lucky as a good proportion of them survived. The reason for this maybe the rescue of all the Pclass1 and Pclass2 Passengers.\n\n\nThe Embark S looks to the port from where majority of the rich people boarded. Still the chances for survival is low here, that is because many passengers from Pclass3 around 81% didn’t survive.\n\n\nPort Q had almost 95% of the passengers were from Pclass3.\n\n\nsns.catplot(x='Pclass',y='Survived',hue='Sex',col='Embarked',data=data,kind='bar')\nplt.show()\n\n\nObservations:\n\n\nThe survival chances are almost 1 for women for Pclass1 and Pclass2 irrespective of the Pclass.\n\n\nPort S looks to be very unlucky for Pclass3 Passenegers as the survival rate for both men and women is very low.(Money Matters)\n\n\nPort Q looks looks to be unlukiest for Men, as almost all were from Pclass 3.\n\n\n\nFilling Missing Embarked\nAs we saw that maximum passengers boarded from Port S, we replace NaN with S.\n\ndata['Embarked'].fillna('S',inplace=True)\ndata.Embarked.isnull().any()# Finally No NaN values"
+  },
+  {
+    "objectID": "core.html#observations-in-a-nutshell-for-all-features",
+    "href": "core.html#observations-in-a-nutshell-for-all-features",
+    "title": "Exploratory Data Analysis",
+    "section": "Observations in a Nutshell for all features:",
+    "text": "Observations in a Nutshell for all features:\nSex: The chance of survival for women is high as compared to men.\nPclass:There is a visible trend that being a 1st class passenger gives you better chances of survival. The survival rate for Pclass3 is very low. For women, the chance of survival from Pclass1 is almost 1 and is high too for those from Pclass2. Money Wins!!!.\nAge: Children less than 5-10 years do have a high chance of survival. Passengers between age group 15 to 35 died a lot.\nEmbarked: This is a very interesting feature. The chances of survival at C looks to be better than even though the majority of Pclass1 passengers got up at S. Passengers at Q were all from Pclass3."
+  },
+  {
+    "objectID": "linear regression.html",
+    "href": "linear regression.html",
+    "title": "Linear Regression",
+    "section": "",
+    "text": "This page deals with LSTM"
+  },
+  {
+    "objectID": "cnn.html",
+    "href": "cnn.html",
+    "title": "CNN",
+    "section": "",
+    "text": "This page delas about CNNs"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "EAS 507",
+    "section": "",
+    "text": "This Page deals about the syllabus and Walkthrough of entire class throught the year"
+  },
+  {
+    "objectID": "index.html#eas-595508--statistical-learning-i",
+    "href": "index.html#eas-595508--statistical-learning-i",
+    "title": "EAS 507",
+    "section": "EAS 595/508- Statistical Learning I",
+    "text": "EAS 595/508- Statistical Learning I\nEAS 508- Statistical Learning I\nDelivery Mode: Inclass\nLocation, Days and Times: MW 12:40-2:00\nInstructor: Proffesor name\nTA  : Ta name\n'email@buffalo.edu'"
+  },
+  {
+    "objectID": "index.html#syllabus",
+    "href": "index.html#syllabus",
+    "title": "EAS 507",
+    "section": "Syllabus",
+    "text": "Syllabus\nDownloadable file here\nSyllabus pdf"
+  },
+  {
+    "objectID": "index.html#course-description",
+    "href": "index.html#course-description",
+    "title": "EAS 507",
+    "section": "Course Description",
+    "text": "Course Description\nThis course is a mathematically rigorous introduction to the theory and computational implementation of techniques at the heart of statistical learning in engineering applications. This first semester considers supervised learning, including an introduction to dimension reduction, PCA, pPCA, ICA, regression and regularization, latent variable methods, cross validation, class imbalance, support vector machines, k-nearest neighbors, Naive Bayes, logistic regression, ensemble methods including bagging, boosting, and random forests, conditional inference, tree methods including CART and BART, Gaussian processes classifiers, and neural networks (e.g. DNN, ANN, CNN). These techniques will be taught with and illustrated in a wide range of engineering applications as well as other publicly available data sets. We will use the R programming language. Students should download R or RStudio onto their computer before the first class. This course mostly follows a traditional lecture format. However, there will be live online coding demonstrations and exercises; some portion of quizzes will include coding questions.\nFill me in please! Don’t forget code examples:"
+  },
+  {
+    "objectID": "index.html#grading",
+    "href": "index.html#grading",
+    "title": "EAS 507",
+    "section": "Grading",
+    "text": "Grading\nGrading Details"
+  },
+  {
+    "objectID": "index.html#approximate-timetable-of-lectures",
+    "href": "index.html#approximate-timetable-of-lectures",
+    "title": "EAS 507",
+    "section": "Approximate Timetable of Lectures",
+    "text": "Approximate Timetable of Lectures\n\nWeek 1 Introduction to R: Introduction to statistical learning in engineering; elementary probability and linear algebra\n\n\nweek 2: Elementary probability and linear algebra; conditional probability; Bayes theorem; Introduction to supervised learning\n\n\nWeek 3: Basic regression, generalized least squares, and data fitting; Bayesian regression; regularization\n\n\nWeek 4: PCA, pPCA, ICA\n\n\nWeek 5:Geometry-based methods: kNN, SVM; transforms and kernels, neighborhood\n\n\nWeek 6:Convergence and mis-classification; cross validation and testing\n\n\nWeek 7: Naïve Bayes,Laplace approximation; generative vs discriminative models; Bayesian logistic regression; comparison of methods\n\n\nWeek 8:Tree methods; CART, BART"
+  },
+  {
+    "objectID": "index.html#student-learning-outcomes",
+    "href": "index.html#student-learning-outcomes",
+    "title": "EAS 507",
+    "section": "Student Learning Outcomes",
+    "text": "Student Learning Outcomes\nAt the conclusion of this course students will be able to: understand and describe the process of classification, regression, and dimension reduction; describe and implement several statistical learning techniques to analyze and interpret data; analyze and solve statistical learning problems in an engineering setting; effectively communicate an engineering approach to statistical learning problems"
+  },
+  {
+    "objectID": "index.html#academic-integrity",
+    "href": "index.html#academic-integrity",
+    "title": "EAS 507",
+    "section": "Academic Integrity",
+    "text": "Academic Integrity\nAcademic integrity is a fundamental university value. Through the honest completion of academic work, students sustain the integrity of the university and of themselves while facilitating the university’s imperative for the transmission of knowledge and culture based upon the generation of new and innovative ideas. See the University at Buffalo’s Graduate Academic Integrity policy at:"
+  },
+  {
+    "objectID": "pca.html",
+    "href": "pca.html",
+    "title": "PCA Analysis",
+    "section": "",
+    "text": "PCA detail walkthrough with help of MNIST Data Set\nView Source Code | View Slides | Watch Video Walkthrough"
+  },
+  {
+    "objectID": "pca.html#why-pca",
+    "href": "pca.html#why-pca",
+    "title": "PCA Analysis",
+    "section": "Why PCA",
+    "text": "Why PCA\n\nDimensionality reduction : Reduces variables.\n\n\nFeature extraction : Identifies Important features\n\n\nData visualization : Turns into 2 or 3d features\n\n\nNoise reduction : Reduces impact of noises\n\n\nMulticollinearity detection : Detect correlated variables\n\n\nPreprocessing and data compression : Simplifies and compresses the data"
+  },
+  {
+    "objectID": "pca.html#visualizing-with-help-of-mnist",
+    "href": "pca.html#visualizing-with-help-of-mnist",
+    "title": "PCA Analysis",
+    "section": "VIsualizing with help of MNIST",
+    "text": "VIsualizing with help of MNIST\n\nWhat is MNIST\nMNIST is a simple computer vision dataset. It consists of 28x28 pixel images of handwritten digits, such as:\nEvery MNIST data point, every image, can be thought of as an array of numbers describing how dark each pixel is. For example, we might think of as something like:\nSince each image has 28 by 28 pixels, we get a 28x28 array. We can flatten each array into a 28∗28=784 dimensional vector. Each component of the vector is a value between zero and one describing the intensity of the pixel. Thus, we generally think of MNIST as being a collection of 784-dimensional vectors.\n\nWhile the MNIST data points are embedded in 784-dimensional space, they live in a very small subspace. With some slightly harder arguments, we can see that they occupy a lower dimensional subspace.\n\n\n\nDownloading MNIST Dataset\n\nfrom pathlib import Path\nimport os\nfrom sklearn.preprocessing import StandardScaler\nfrom scipy.linalg import eigh \nimport pandas as pd\nimport seaborn as sns\nimport matplotlib.pyplot as plt\nimport numpy as np\nimport seaborn as sns\nfrom sklearn.decomposition import PCA\nfrom keras.datasets import mnist # MNIST dataset is included in Keras\n\n\n# The MNIST data is split between 60,000 training images and 10,000 test image\n(X_train, y_train), (X_test, y_test) = mnist.load_data()\n\nprint(\"X_train shape\", X_train.shape)\n\nX_train shape (60000, 28, 28)\n\n\n\n\nVisualize Train Data\n\nLets us first see our train data\n\n\nfig = plt.figure(figsize=(6, 6))\nfig.subplots_adjust(left=0, right=1, bottom=0, top=1, hspace=0.05, wspace=0.05)\n\nfor i in range(4):\n    ax = fig.add_subplot(5, 5, i + 1, xticks=[], yticks=[])\n    ax.imshow(X_train[i], cmap=plt.cm.binary, interpolation='nearest')\n    # label the image with the target value\n    ax.text(0, 7, str(y_train[i]))\n\n\n\n\n\n\nReading the data using pandas\n\ndata = pd.read_csv(f'{compe}/train.csv')\ndata.head(3)\n\n\n\n\n\n\n\n\nlabel\npixel0\npixel1\npixel2\npixel3\npixel4\npixel5\npixel6\npixel7\npixel8\n...\npixel774\npixel775\npixel776\npixel777\npixel778\npixel779\npixel780\npixel781\npixel782\npixel783\n\n\n\n\n0\n1\n0\n0\n0\n0\n0\n0\n0\n0\n0\n...\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n\n\n1\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n...\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n\n\n2\n1\n0\n0\n0\n0\n0\n0\n0\n0\n0\n...\n0\n0\n0\n0\n0\n0\n0\n0\n0\n0\n\n\n\n\n3 rows × 785 columns\n\n\n\n\nprint(f'Shape of the data:{data.shape}')\n\nShape of the data:(42000, 785)\n\n\n\nlabels = data['label']\nfeatures = data.drop('label',axis =1)\nprint(f'Shape of features:{features.shape}')\n\nShape of features:(42000, 784)\n\n\n\n\nMaking Covariance matrix\n\nstandarized_data = StandardScaler().fit_transform(features)\ncovar_mat = np.matmul(standarized_data.T,standarized_data)\nprint(f'Shape of covariance matrix:{covar_mat.shape}')\n\nShape of covariance matrix:(784, 784)\n\n\n\nvalues, vectors = eigh(covar_mat,eigvals = (782,783))\nvectors = vectors.T\nprint(f'Shape of Vectors : {vectors.shape}')\n\nShape of Vectors : (2, 784)\n\n\n\nnew_cords = np.matmul(vectors,features.T)\nprint(f'Shape of Vectors : {new_cords.shape}')\n\nShape of Vectors : (2, 42000)\n\n\n\nnew_cordinates = np.vstack((new_cords,labels)).T\ndf = pd.DataFrame(data=new_cordinates,columns = ('p0','p1','labels'))\ndf.head(2)\n\n\n\n\n\n\n\n\np0\np1\nlabels\n\n\n\n\n0\n-540.331669\n122.904004\n1.0\n\n\n1\n339.624235\n2318.125463\n0.0\n\n\n\n\n\n\n\n\n\nVIsualizing principal features\n\nsns.FacetGrid(df,hue='labels',height = 5).map(plt.scatter,'p0','p1').add_legend()\nplt.show()"
+  },
+  {
+    "objectID": "pca.html#extra-resources-for-pca",
+    "href": "pca.html#extra-resources-for-pca",
+    "title": "PCA Analysis",
+    "section": "Extra Resources for PCA",
+    "text": "Extra Resources for PCA\n\nFor visualization use this colah beautiful site : Colah Website\n\n\nFor Visulazation of MNIST : ML Addict\n\n\nNext advancement to PCA -&gt; T-SNE : Distil Pub\n\n\nUnderstanding Principal Component Analysis : Medium Blog"
+  },
+  {
+    "objectID": "lstm.html",
+    "href": "lstm.html",
+    "title": "LSTM",
+    "section": "",
+    "text": "This page deals with LSTM"
+  },
+  {
+    "objectID": "Logistic Regression.html",
+    "href": "Logistic Regression.html",
+    "title": "sdm_class_prj",
+    "section": "",
+    "text": "# Logistic Regression\n\n\nThis page deals with Logistic Regression"
+  }
+]
