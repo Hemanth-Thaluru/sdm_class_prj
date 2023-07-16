@@ -3,5 +3,9 @@ website:
     contents:
       - index.ipynb
       - 01_core.ipynb
+      - 02_PCA.ipynb
+      - LSTM.ipynb
+      - Linear Regression.ipynb
+      - Logistic Regression.ipynb
       - PCA.ipynb
       - cnn.ipynb
