@@ -7,5 +7,4 @@ website:
       - LSTM.ipynb
       - Linear Regression.ipynb
       - Logistic Regression.ipynb
-      - PCA.ipynb
       - cnn.ipynb
