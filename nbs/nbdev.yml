@@ -1,0 +1,9 @@
+project:
+  output-dir: _docs
+
+website:
+  title: "sdm_class_prj"
+  site-url: "https://Hemanth-Thaluru.github.io/sdm_class_prj"
+  description: "Prototype for Statistical Learning and Data Mining - I"
+  repo-branch: main
+  repo-url: "https://github.com/Hemanth-Thaluru/sdm_class_prj"

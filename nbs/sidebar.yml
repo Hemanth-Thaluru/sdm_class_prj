@@ -1,0 +1,7 @@
+website:
+  sidebar:
+    contents:
+      - index.ipynb
+      - 01_core.ipynb
+      - PCA.ipynb
+      - cnn.ipynb
